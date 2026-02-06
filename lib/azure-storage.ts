@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Azure Blob Storage configuration
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING!;
-const containerName = process.env.AZURE_STORAGE_CONNECTION_STRING || 'campuskit-files';
+const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME || 'campuskit-files';
 
 let blobServiceClient: BlobServiceClient | null = null;
 let containerClient: ContainerClient | null = null;

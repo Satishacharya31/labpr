@@ -1,7 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50;
+/* Custom scrollbar for clean look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #101622;
+}
+::-webkit-scrollbar-thumb {
+  background: #282e39;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f4756;
+}
+
+/* Glass morphism utilities */
+.glass-panel {
+  background: rgba(30, 39, 54, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-card {
+  background: linear-gradient(145deg, rgba(30, 39, 54, 0.6) 0%, rgba(20, 25, 35, 0.6) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(19, 91, 236, 0.3);
+  box-shadow: 0 10px 40px -10px rgba(19, 91, 236, 0.2);
+}
+
+.bg-glow {
+  background: radial-gradient(circle at 50% -20%, rgba(19, 91, 236, 0.15), rgba(16, 22, 34, 0) 60%);
+}
+
+/* Hide scrollbar for filter section */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animate pulse for status indicators */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }

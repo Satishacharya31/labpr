@@ -12,6 +12,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      allowDangerousEmailAccountLinking: true, // Allow linking existing accounts
     }),
     CredentialsProvider({
       id: 'neon-auth',
@@ -30,7 +31,7 @@ export const authOptions: NextAuthOptions = {
         try {
           // Use Neon authentication service
           const neonUser = await neonAuth.authenticateUser(credentials.email, credentials.password)
-          
+
           if (!neonUser) {
             throw new Error('Invalid credentials');
           }
@@ -120,58 +121,59 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Handle Google OAuth sign-in
+      // Handle Google OAuth sign-in - allow ALL users to sign in
       if (account?.provider === 'google' && user.email) {
         // Check if user is in admin whitelist
         const adminEntry = await prisma.adminWhitelist.findUnique({
           where: { email: user.email }
         });
-        
-        // Only allow Google sign-in if user is in active admin whitelist
-        if (!adminEntry || !adminEntry.isActive) {
-          console.log(`Google sign-in denied for ${user.email}: not in admin whitelist`);
-          return false;
-        }
-        
+
+        // Determine role: ADMIN if in active whitelist, USER otherwise
+        const isAdmin = adminEntry?.isActive ?? false;
+        const userRole = isAdmin ? 'ADMIN' : 'USER';
+
         // Create/update user record in our database
         await prisma.user.upsert({
           where: { email: user.email },
           update: {
             name: user.name,
             image: user.image,
-            role: 'ADMIN' // Set as admin since they're in whitelist
+            role: userRole
           },
           create: {
             email: user.email,
             name: user.name,
             image: user.image,
-            role: 'ADMIN'
+            role: userRole
           }
         });
-        
-        // Try to create corresponding Neon database user
+
+        // Create Neon database user for ALL users with proper role
         try {
           const neonAuth = getNeonAuthService();
           const existingNeonUser = await neonAuth.authenticateUser(user.email);
           if (!existingNeonUser) {
-            await neonAuth.createUser(user.email, user.name || undefined, 'ADMIN');
+            // Create user with appropriate role: ADMIN or USER
+            await neonAuth.createUser(user.email, user.name || undefined, userRole as 'ADMIN' | 'USER');
+            console.log(`Created Neon user for ${user.email} with role: ${userRole}`);
           }
           await neonAuth.disconnect();
         } catch (error) {
           console.error('Error creating Neon user for Google account:', error);
-          // Continue anyway - Google auth will still work for admin panel
+          // Continue anyway - Google auth will still work
         }
-        
+
+        // Allow ALL users to sign in
         return true;
       }
-      
+
       return true;
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
       }
-      
+
       if (token.email) {
         // Get user data to check role
         const userData = await prisma.user.findUnique({
@@ -182,17 +184,17 @@ export const authOptions: NextAuthOptions = {
         const adminEntry = await prisma.adminWhitelist.findUnique({
           where: { email: token.email },
         });
-        
+
         // User is admin if they have ADMIN role AND are in the active whitelist
         const hasAdminRole = userData?.role === 'ADMIN';
         const isInActiveWhitelist = adminEntry?.isActive ?? false;
-        
+
         token.isAdmin = hasAdminRole && isInActiveWhitelist;
         token.canManageUsers = token.isAdmin ? (adminEntry?.canManageUsers ?? false) : false;
         token.canManageContent = token.isAdmin ? (adminEntry?.canManageContent ?? false) : false;
         token.canManageSettings = token.isAdmin ? (adminEntry?.canManageSettings ?? false) : false;
       }
-      
+
       return token;
     },
     async session({ session, token }) {

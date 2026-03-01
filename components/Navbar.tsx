@@ -37,7 +37,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
                     <span className="text-white font-bold">C</span>
                 </div>
-                <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-400 hidden sm:block">CampusKit</span>
+                <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-400 hidden sm:block">Campus Kit</span>
             </Link>
 
             <Link href="/guide" className="hidden md:block text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white transition-colors ml-6">

@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { sendEmail, getPasswordSetupEmail } from '@/lib/email';
 
 export default async function handler(
   req: NextApiRequest,
@@ -57,8 +58,22 @@ export default async function handler(
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
     const setupLink = `${baseUrl}/auth/setup-password?token=${token}`
 
+    // Send setup link via email
+    if (email && adminEntry.name) {
+      const emailHtml = getPasswordSetupEmail(adminEntry.name, setupLink);
+      
+      await sendEmail({
+        to: email,
+        subject: 'Complete Your Campus Kit Setup',
+        html: emailHtml,
+      }).catch(err => {
+        console.error('Failed to send setup email, but link generated:', err);
+        // Don't fail the request if email fails to send
+      });
+    }
+
     res.status(200).json({
-      message: 'Password setup link generated successfully',
+      message: 'Password setup link generated and email sent',
       setupLink,
       expiresAt,
       tokenId: setupToken.id

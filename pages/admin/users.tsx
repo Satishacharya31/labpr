@@ -26,6 +26,12 @@ export default function AdminUsersPage() {
     const [editFormData, setEditFormData] = useState({ name: '', role: 'USER' })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null)
+    
+    // Password change states
+    const [passwordChangeUser, setPasswordChangeUser] = useState<User | null>(null)
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
     useEffect(() => {
         if (status === 'loading') return
@@ -107,6 +113,55 @@ export default function AdminUsersPage() {
         } catch (error) {
             console.error('Delete failed:', error)
             alert('Failed to delete user')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleChangePassword = async () => {
+        if (!passwordChangeUser) return
+        setPasswordMessage(null)
+
+        if (!newPassword || !confirmPassword) {
+            setPasswordMessage({ type: 'error', text: 'Please fill in all password fields' })
+            return
+        }
+
+        if (newPassword !== confirmPassword) {
+            setPasswordMessage({ type: 'error', text: 'Passwords do not match' })
+            return
+        }
+
+        if (newPassword.length < 8) {
+            setPasswordMessage({ type: 'error', text: 'Password must be at least 8 characters' })
+            return
+        }
+
+        setIsSubmitting(true)
+
+        try {
+            const res = await fetch(`/api/admin/users/${passwordChangeUser.id}/change-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newPassword, confirmPassword })
+            })
+
+            const data = await res.json()
+
+            if (res.ok) {
+                setPasswordMessage({ type: 'success', text: 'Password changed successfully!' })
+                setTimeout(() => {
+                    setPasswordChangeUser(null)
+                    setNewPassword('')
+                    setConfirmPassword('')
+                    setPasswordMessage(null)
+                }, 2000)
+            } else {
+                setPasswordMessage({ type: 'error', text: data.error || 'Failed to change password' })
+            }
+        } catch (error) {
+            console.error('Change password failed:', error)
+            setPasswordMessage({ type: 'error', text: 'Failed to change password' })
         } finally {
             setIsSubmitting(false)
         }
@@ -251,6 +306,17 @@ export default function AdminUsersPage() {
                                                             Edit
                                                         </button>
                                                         <button
+                                                            onClick={() => {
+                                                                setPasswordChangeUser(user)
+                                                                setNewPassword('')
+                                                                setConfirmPassword('')
+                                                                setPasswordMessage(null)
+                                                            }}
+                                                            className="px-3 py-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 rounded-md text-xs font-medium transition-colors"
+                                                        >
+                                                            Reset Password
+                                                        </button>
+                                                        <button
                                                             onClick={() => setDeleteConfirmUser(user)}
                                                             disabled={user.id === (session.user as any).id}
                                                             className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -373,6 +439,99 @@ export default function AdminUsersPage() {
                                 className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
                             >
                                 {isSubmitting ? 'Deleting...' : 'Delete User'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Password Change Modal */}
+            {passwordChangeUser && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#12121a] border border-white/10 rounded-2xl w-full max-w-md p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold">Reset Password</h3>
+                            <button
+                                onClick={() => {
+                                    setPasswordChangeUser(null)
+                                    setNewPassword('')
+                                    setConfirmPassword('')
+                                    setPasswordMessage(null)
+                                }}
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl mb-6">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-lg font-medium">
+                                {passwordChangeUser.name?.[0] || passwordChangeUser.email?.[0] || 'U'}
+                            </div>
+                            <div>
+                                <p className="font-medium">{passwordChangeUser.name || 'Unnamed'}</p>
+                                <p className="text-sm text-gray-400">{passwordChangeUser.email}</p>
+                            </div>
+                        </div>
+
+                        {passwordMessage && (
+                            <div className={`mb-4 p-3 rounded-lg text-sm ${
+                                passwordMessage.type === 'success'
+                                    ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                                    : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                            }`}>
+                                {passwordMessage.text}
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">New Password</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 transition-colors"
+                                    placeholder="Enter new password"
+                                    disabled={isSubmitting}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Confirm Password</label>
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 transition-colors"
+                                    placeholder="Confirm new password"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => {
+                                    setPasswordChangeUser(null)
+                                    setNewPassword('')
+                                    setConfirmPassword('')
+                                    setPasswordMessage(null)
+                                }}
+                                disabled={isSubmitting}
+                                className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 font-medium transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleChangePassword}
+                                disabled={isSubmitting}
+                                className="flex-1 px-4 py-3 bg-amber-600 hover:bg-amber-700 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
+                            >
+                                {isSubmitting ? 'Resetting...' : 'Reset Password'}
                             </button>
                         </div>
                     </div>

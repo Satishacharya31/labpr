@@ -50,7 +50,7 @@ export default function GuidePage() {
 
                 {/* content */}
                 <div className="flex-1 max-w-3xl">
-                    <h1 className="text-4xl font-bold mb-6">CampusKit User Guide</h1>
+                    <h1 className="text-4xl font-bold mb-6">Campus kit User Guide</h1>
                     <p className="text-xl text-gray-500 dark:text-gray-400 mb-12">
                         Learn how to create, manage, and publish your interactive lab reports and projects.
                     </p>

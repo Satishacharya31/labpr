@@ -34,6 +34,18 @@ model PasswordSetupToken {
   updatedAt DateTime @updatedAt
 }
 
+// Password reset tokens - for user password reset via forgot password
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // NextAuth models
 model Account {
   id                String  @id @default(cuid())
@@ -74,6 +86,7 @@ model User {
   sessions      Session[]
   contents      Content[]
   assets        Asset[]
+  passwordResetTokens PasswordResetToken[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }

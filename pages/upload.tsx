@@ -608,7 +608,7 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
                 </span>
                 <span>{deployed ? '• Published' : '• Draft'}</span>
               </div>
-              <span>CampusKit Editor v2.0</span>
+              <span>Campus kit Editor v2.0</span>
             </div>
           </div>
         </div>

@@ -134,7 +134,7 @@ export default function AdminPage() {
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
                                     <span className="text-sm font-bold">C</span>
                                 </div>
-                                <span className="font-semibold">CampusKit</span>
+                                <span className="font-semibold">Campus kit</span>
                             </Link>
                             <span className="text-xs px-2.5 py-1 bg-violet-500/20 text-violet-400 rounded-full font-medium">Admin</span>
                         </div>

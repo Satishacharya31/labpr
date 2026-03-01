@@ -12,15 +12,19 @@ export interface EmailParams {
 export async function sendEmail({ to, subject, html, replyTo }: EmailParams) {
   try {
     if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY is not set');
+      console.error('❌ RESEND_API_KEY is not set in environment variables');
       return {
         success: false,
-        error: 'Email service not configured',
+        error: 'Email service not configured - missing RESEND_API_KEY',
       };
     }
 
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    
+    console.log(`📧 Attempting to send email: to=${to}, from=${fromEmail}, subject=${subject}`);
+
     const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@campuskit.com',
+      from: fromEmail,
       to,
       subject,
       html,
@@ -28,19 +32,20 @@ export async function sendEmail({ to, subject, html, replyTo }: EmailParams) {
     });
 
     if (result.error) {
-      console.error('Failed to send email:', result.error);
+      console.error('❌ Failed to send email:', result.error);
       return {
         success: false,
         error: result.error.message,
       };
     }
 
+    console.log(`✅ Email sent successfully - Message ID: ${result.data?.id}`);
     return {
       success: true,
       messageId: result.data?.id,
     };
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('❌ Email sending error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

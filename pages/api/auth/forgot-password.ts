@@ -94,14 +94,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       </html>
     `;
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'Reset Your Password',
       html: emailHtml,
-    }).catch((err) => {
-      console.error('Failed to send reset email:', err);
-      // Don't fail the request if email fails
     });
+
+    if (!emailResult.success) {
+      console.error('Failed to send reset email:', emailResult.error);
+      // Still return success for security, but log the error
+    }
 
     return res.status(200).json({
       message: 'If an account exists with this email, you will receive a password reset link',

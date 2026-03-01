@@ -62,14 +62,16 @@ export default async function handler(
     if (email && adminEntry.name) {
       const emailHtml = getPasswordSetupEmail(adminEntry.name, setupLink);
       
-      await sendEmail({
+      const emailResult = await sendEmail({
         to: email,
         subject: 'Complete Your Campus Kit Setup',
         html: emailHtml,
-      }).catch(err => {
-        console.error('Failed to send setup email, but link generated:', err);
-        // Don't fail the request if email fails to send
       });
+
+      if (!emailResult.success) {
+        console.error('Failed to send setup email:', emailResult.error);
+        // Still return success for security, but log the error
+      }
     }
 
     res.status(200).json({

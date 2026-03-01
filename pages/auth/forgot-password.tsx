@@ -122,13 +122,10 @@ export default function ForgotPasswordPage() {
                 </div>
                 <p className="text-gray-300 mb-4">Check your email for a reset link</p>
                 <button
-                  onClick={() => {
-                    setSubmitted(false);
-                    setMessage(null);
-                  }}
-                  className="text-violet-400 hover:text-violet-300 text-sm font-medium"
+                  onClick={() => setSubmitted(false)}
+                  className="mt-4 w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition-all border border-white/20"
                 >
-                  Try another email
+                  Back to Home
                 </button>
               </div>
             )}
@@ -142,9 +139,8 @@ export default function ForgotPasswordPage() {
                 </Link>
               </p>
               <p className="text-gray-400 text-sm">
-                Don't have an account?{' '}
-                <Link href="/signup" className="text-violet-400 hover:text-violet-300 font-medium">
-                  Sign Up
+                <Link href="/" className="text-violet-400 hover:text-violet-300 font-medium">
+                 Back to Home
                 </Link>
               </p>
             </div>

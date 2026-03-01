@@ -63,10 +63,7 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-12">
-            <a href="/">
-            <div className="inline-block w-14 h-14 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-3">
-              <span className="text-2xl font-bold text-white">C</span>
-            </div>
+            <a href="/"> <span className="text-2xl font-bold text-white">C</span>
             <h1 className="text-3xl font-bold text-white">Campus Kit</h1>
             </a>
           </div>

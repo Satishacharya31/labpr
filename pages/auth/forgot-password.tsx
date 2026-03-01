@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -60,11 +62,13 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="inline-block w-12 h-12 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-4">
-              <span className="text-xl font-bold text-white">C</span>
+          <div className="text-center mb-12">
+            <a href="/">
+            <div className="inline-block w-14 h-14 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-3">
+              <span className="text-2xl font-bold text-white">C</span>
             </div>
-            <h1 className="text-2xl font-bold text-white">Campus Kit</h1>
+            <h1 className="text-3xl font-bold text-white">Campus Kit</h1>
+            </a>
           </div>
           {/* Card */}
           <div className="bg-[#12121a]/80 backdrop-blur-sm border border-white/10 rounded-2xl p-8">
@@ -121,10 +125,10 @@ export default function ForgotPasswordPage() {
                 </div>
                 <p className="text-gray-300 mb-4">Check your email for a reset link</p>
                 <button
-                  onClick={() => setSubmitted(false)}
-                  className="mt-4 w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 rounded-lg transition-all border border-white/20"
+                  onClick={() => router.push('/')}
+                  className="mt-4 w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium py-2 rounded-lg transition-all"
                 >
-                  Back to Home
+                  Go to Home
                 </button>
               </div>
             )}

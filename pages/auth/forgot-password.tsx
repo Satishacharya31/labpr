@@ -62,11 +62,11 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <div className="inline-block w-12 h-12 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-4">
-              <span className="text-xl font-bold text-white">C</span>
-            </div>
+              <link rel="stylesheet" href="/"><span className="text-xl font-bold text-white">C</span>
+           </link>
             <h1 className="text-2xl font-bold text-white">Campus Kit</h1>
           </div>
-
+        </div>
           {/* Card */}
           <div className="bg-[#12121a]/80 backdrop-blur-sm border border-white/10 rounded-2xl p-8">
             <div className="mb-6">

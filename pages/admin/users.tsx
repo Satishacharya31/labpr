@@ -27,11 +27,10 @@ export default function AdminUsersPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null)
     
-    // Password change states
-    const [passwordChangeUser, setPasswordChangeUser] = useState<User | null>(null)
-    const [newPassword, setNewPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+    // Password reset link states
+    const [sendingLinkUser, setSendingLinkUser] = useState<User | null>(null)
+    const [linkMessage, setLinkMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+    const [generatedLink, setGeneratedLink] = useState<string>('')
 
     useEffect(() => {
         if (status === 'loading') return
@@ -118,50 +117,34 @@ export default function AdminUsersPage() {
         }
     }
 
-    const handleChangePassword = async () => {
-        if (!passwordChangeUser) return
-        setPasswordMessage(null)
-
-        if (!newPassword || !confirmPassword) {
-            setPasswordMessage({ type: 'error', text: 'Please fill in all password fields' })
-            return
-        }
-
-        if (newPassword !== confirmPassword) {
-            setPasswordMessage({ type: 'error', text: 'Passwords do not match' })
-            return
-        }
-
-        if (newPassword.length < 8) {
-            setPasswordMessage({ type: 'error', text: 'Password must be at least 8 characters' })
-            return
-        }
-
+    const handleSendPasswordLink = async () => {
+        if (!sendingLinkUser || !sendingLinkUser.email) return
+        setLinkMessage(null)
         setIsSubmitting(true)
 
         try {
-            const res = await fetch(`/api/admin/users/${passwordChangeUser.id}/change-password`, {
+            const res = await fetch('/api/admin/generate-password-link', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newPassword, confirmPassword })
+                body: JSON.stringify({ email: sendingLinkUser.email })
             })
 
             const data = await res.json()
 
             if (res.ok) {
-                setPasswordMessage({ type: 'success', text: 'Password changed successfully!' })
+                setLinkMessage({ type: 'success', text: 'Password setup link sent to user\'s email!' })
+                setGeneratedLink(data.setupLink || '')
                 setTimeout(() => {
-                    setPasswordChangeUser(null)
-                    setNewPassword('')
-                    setConfirmPassword('')
-                    setPasswordMessage(null)
-                }, 2000)
+                    setSendingLinkUser(null)
+                    setLinkMessage(null)
+                    setGeneratedLink('')
+                }, 5000)
             } else {
-                setPasswordMessage({ type: 'error', text: data.error || 'Failed to change password' })
+                setLinkMessage({ type: 'error', text: data.error || 'Failed to generate password setup link' })
             }
         } catch (error) {
-            console.error('Change password failed:', error)
-            setPasswordMessage({ type: 'error', text: 'Failed to change password' })
+            console.error('Generate link failed:', error)
+            setLinkMessage({ type: 'error', text: 'Failed to generate password setup link' })
         } finally {
             setIsSubmitting(false)
         }
@@ -307,14 +290,13 @@ export default function AdminUsersPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => {
-                                                                setPasswordChangeUser(user)
-                                                                setNewPassword('')
-                                                                setConfirmPassword('')
-                                                                setPasswordMessage(null)
+                                                                setSendingLinkUser(user)
+                                                                setLinkMessage(null)
+                                                                setGeneratedLink('')
                                                             }}
                                                             className="px-3 py-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 rounded-md text-xs font-medium transition-colors"
                                                         >
-                                                            Reset Password
+                                                            Send Setup Link
                                                         </button>
                                                         <button
                                                             onClick={() => setDeleteConfirmUser(user)}
@@ -445,18 +427,17 @@ export default function AdminUsersPage() {
                 </div>
             )}
 
-            {/* Password Change Modal */}
-            {passwordChangeUser && (
+            {/* Send Password Setup Link Modal */}
+            {sendingLinkUser && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-[#12121a] border border-white/10 rounded-2xl w-full max-w-md p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-semibold">Reset Password</h3>
+                            <h3 className="text-lg font-semibold">Send Password Setup Link</h3>
                             <button
                                 onClick={() => {
-                                    setPasswordChangeUser(null)
-                                    setNewPassword('')
-                                    setConfirmPassword('')
-                                    setPasswordMessage(null)
+                                    setSendingLinkUser(null)
+                                    setLinkMessage(null)
+                                    setGeneratedLink('')
                                 }}
                                 className="text-gray-400 hover:text-white transition-colors"
                             >
@@ -468,70 +449,77 @@ export default function AdminUsersPage() {
 
                         <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl mb-6">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-lg font-medium">
-                                {passwordChangeUser.name?.[0] || passwordChangeUser.email?.[0] || 'U'}
+                                {sendingLinkUser.name?.[0] || sendingLinkUser.email?.[0] || 'U'}
                             </div>
                             <div>
-                                <p className="font-medium">{passwordChangeUser.name || 'Unnamed'}</p>
-                                <p className="text-sm text-gray-400">{passwordChangeUser.email}</p>
+                                <p className="font-medium">{sendingLinkUser.name || 'Unnamed'}</p>
+                                <p className="text-sm text-gray-400">{sendingLinkUser.email}</p>
                             </div>
                         </div>
 
-                        {passwordMessage && (
+                        {linkMessage && (
                             <div className={`mb-4 p-3 rounded-lg text-sm ${
-                                passwordMessage.type === 'success'
+                                linkMessage.type === 'success'
                                     ? 'bg-green-500/10 text-green-400 border border-green-500/30'
                                     : 'bg-red-500/10 text-red-400 border border-red-500/30'
                             }`}>
-                                {passwordMessage.text}
+                                {linkMessage.text}
                             </div>
                         )}
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-2">New Password</label>
-                                <input
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 transition-colors"
-                                    placeholder="Enter new password"
-                                    disabled={isSubmitting}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                        {generatedLink && (
+                            <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                <label className="block text-xs text-blue-400 mb-2 font-medium">Generated Link (expires in 24 hours)</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={generatedLink}
+                                        readOnly
+                                        className="flex-1 bg-[#0a0a0f] border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(generatedLink)
+                                            setLinkMessage({ type: 'success', text: 'Link copied to clipboard!' })
+                                        }}
+                                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-xs font-medium transition-colors"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
                             </div>
+                        )}
 
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-2">Confirm Password</label>
-                                <input
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 transition-colors"
-                                    placeholder="Confirm new password"
-                                    disabled={isSubmitting}
-                                />
+                        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
+                            <div className="flex gap-3">
+                                <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div className="text-sm text-amber-400">
+                                    <p className="font-medium mb-1">Secure Password Setup</p>
+                                    <p className="text-xs text-amber-400/80">A secure password setup link will be sent to the user's email. The link expires in 24 hours.</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex gap-3 mt-6">
+                        <div className="flex gap-3">
                             <button
                                 onClick={() => {
-                                    setPasswordChangeUser(null)
-                                    setNewPassword('')
-                                    setConfirmPassword('')
-                                    setPasswordMessage(null)
+                                    setSendingLinkUser(null)
+                                    setLinkMessage(null)
+                                    setGeneratedLink('')
                                 }}
                                 disabled={isSubmitting}
                                 className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 font-medium transition-colors disabled:opacity-50"
                             >
-                                Cancel
+                                Close
                             </button>
                             <button
-                                onClick={handleChangePassword}
+                                onClick={handleSendPasswordLink}
                                 disabled={isSubmitting}
                                 className="flex-1 px-4 py-3 bg-amber-600 hover:bg-amber-700 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
                             >
-                                {isSubmitting ? 'Resetting...' : 'Reset Password'}
+                                {isSubmitting ? 'Sending...' : 'Send Link'}
                             </button>
                         </div>
                     </div>

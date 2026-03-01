@@ -61,6 +61,10 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Password reset request state
+  const [requestingReset, setRequestingReset] = useState(false);
+  const [resetMessage, setResetMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -231,6 +235,47 @@ export default function ProfilePage() {
       setPasswordMessage({ type: 'error', text: 'Failed to change password' });
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  // Request password reset link handler
+  const handleRequestPasswordReset = async () => {
+    if (!session?.user?.email) {
+      setResetMessage({ type: 'error', text: 'No email found for your account' });
+      return;
+    }
+
+    setRequestingReset(true);
+    setResetMessage(null);
+
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session.user.email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setResetMessage({ 
+          type: 'success', 
+          text: 'Password reset link has been sent to your email. Please check your inbox.' 
+        });
+      } else {
+        setResetMessage({ 
+          type: 'error', 
+          text: data.error || 'Failed to send password reset link' 
+        });
+      }
+    } catch (error) {
+      console.error('Request password reset failed:', error);
+      setResetMessage({ 
+        type: 'error', 
+        text: 'Failed to send password reset link. Please try again.' 
+      });
+    } finally {
+      setRequestingReset(false);
     }
   };
 
@@ -596,61 +641,55 @@ export default function ProfilePage() {
                   <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                 </div>
 
-                {/* Password Change Section - Admin Only */}
-                {(session?.user as any)?.role === 'ADMIN' && (
+                {/* Password Reset Section - All Users */}
                 <div className="pt-6 border-t border-slate-700">
-                  <h4 className="text-lg font-medium text-white mb-4">Change Password</h4>
+                  <h4 className="text-lg font-medium text-white mb-4">Password & Security</h4>
                   
-                  {passwordMessage && (
-                    <div className={`mb-4 px-4 py-3 rounded-lg ${passwordMessage.type === 'success'
+                  {resetMessage && (
+                    <div className={`mb-4 px-4 py-3 rounded-lg ${resetMessage.type === 'success'
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                         : 'bg-red-500/20 text-red-400 border border-red-500/30'
                       }`}>
-                      {passwordMessage.text}
+                      {resetMessage.text}
                     </div>
                   )}
 
-                  <div className="space-y-4 max-w-md">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="At least 8 characters"
-                        className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-4 max-w-2xl">
+                    <div className="flex gap-3">
+                      <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="text-sm text-blue-400">
+                        <p className="font-medium mb-1">Secure Password Reset</p>
+                        <p className="text-xs text-blue-400/80">For security reasons, password changes are done via email. Click the button below to receive a secure password reset link.</p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter your password"
-                        className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-                    <button
-                      onClick={handleChangePassword}
-                      disabled={changingPassword || !newPassword || !confirmPassword}
-                      className="w-full px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {changingPassword ? (
-                        <>
-                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                          Changing Password...
-                        </>
-                      ) : (
-                        'Change Password'
-                      )}
-                    </button>
                   </div>
+
+                  <button
+                    onClick={handleRequestPasswordReset}
+                    disabled={requestingReset}
+                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {requestingReset ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Sending Reset Link...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Request Password Reset Link
+                      </>
+                    )}
+                  </button>
                 </div>
-                )}
+
                 <div className="pt-4">
                   <button
                     onClick={handleSaveSettings}

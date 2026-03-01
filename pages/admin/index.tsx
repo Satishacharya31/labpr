@@ -122,7 +122,7 @@ export default function AdminPage() {
     return (
         <>
             <Head>
-                <title>Admin Panel - CampusKit</title>
+                <title>Admin Panel - Campus Kit</title>
             </Head>
 
             <div className="min-h-screen bg-[#0a0a0f] text-white">

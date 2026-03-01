@@ -23,7 +23,7 @@ export default function DocumentViewer({ document }: DocumentViewerProps) {
         return (
             <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center text-white">
                 <Head>
-                    <title>Document Not Found - CampusKit</title>
+                    <title>Document Not Found | Campus Kit</title>
                 </Head>
                 <div className="text-center">
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -54,8 +54,18 @@ export default function DocumentViewer({ document }: DocumentViewerProps) {
     return (
         <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
             <Head>
-                <title>{document.title} - CampusKit</title>
-                <meta name="description" content={`View ${document.title} - ${document.subject}`} />
+                <title>{document.title} | Campus Kit</title>
+                <meta name="description" content={`View ${document.title} in ${document.subject} on Campus Kit.`} />
+                <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+                <link rel="canonical" href={`https://campuskit.vercel.app/document/${document.id}`} />
+                <meta property="og:type" content="article" />
+                <meta property="og:site_name" content="Campus Kit" />
+                <meta property="og:url" content={`https://campuskit.vercel.app/document/${document.id}`} />
+                <meta property="og:title" content={`${document.title} | Campus Kit`} />
+                <meta property="og:description" content={`View ${document.title} in ${document.subject} on Campus Kit.`} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={`${document.title} | Campus Kit`} />
+                <meta name="twitter:description" content={`View ${document.title} in ${document.subject} on Campus Kit.`} />
             </Head>
 
             {/* Header */}
@@ -67,16 +77,6 @@ export default function DocumentViewer({ document }: DocumentViewerProps) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                         </Link>
-                        <div>
-                            <h1 className="text-white font-semibold">{document.title}</h1>
-                            <div className="flex items-center gap-3 text-sm text-gray-400">
-                                <span>{document.subject}</span>
-                                <span>•</span>
-                                <span>{document.views} views</span>
-                                <span>•</span>
-                                <span>{formatFileSize(document.fileSize)}</span>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">

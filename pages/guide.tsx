@@ -14,8 +14,8 @@ export default function GuidePage() {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0f] text-gray-900 dark:text-white pb-20">
             <Head>
-                <title>User Guide - CampusKit</title>
-                <meta name="description" content="How to use CampusKit for your projects" />
+                <title>User Guide - Campus Kit</title>
+                <meta name="description" content="How to use Campus Kit for your projects" />
             </Head>
 
             <Navbar searchQuery="" setSearchQuery={() => { }} />

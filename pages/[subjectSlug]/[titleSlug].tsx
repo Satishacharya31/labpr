@@ -1,6 +1,9 @@
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
+import { useEffect, useRef, useState } from 'react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import prisma from '@/lib/prisma'
 import { resolveRelativeAssets } from '@/lib/assets'
 
@@ -24,9 +27,101 @@ interface Asset {
 interface Props {
   content: Content | null
   assets: Asset[]
+  canonicalUrl: string
 }
 
-export default function ContentPage({ content, assets }: Props) {
+export default function ContentPage({ content, assets, canonicalUrl }: Props) {
+  const router = useRouter()
+  const [backButtonPos, setBackButtonPos] = useState({ x: 16, y: 16 })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragStateRef = useRef({
+    moved: false,
+    suppressClick: false,
+    offsetX: 0,
+    offsetY: 0,
+  })
+
+  const clampPosition = (x: number, y: number) => {
+    if (typeof window === 'undefined') {
+      return { x, y }
+    }
+
+    const buttonWidth = 120
+    const buttonHeight = 44
+    const margin = 8
+
+    return {
+      x: Math.min(Math.max(x, margin), window.innerWidth - buttonWidth - margin),
+      y: Math.min(Math.max(y, margin), window.innerHeight - buttonHeight - margin),
+    }
+  }
+
+  const handleBackMouseDown = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) return
+    event.preventDefault()
+
+    dragStateRef.current.moved = false
+    dragStateRef.current.offsetX = event.clientX - backButtonPos.x
+    dragStateRef.current.offsetY = event.clientY - backButtonPos.y
+    setIsDragging(true)
+  }
+
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const rawX = event.clientX - dragStateRef.current.offsetX
+      const rawY = event.clientY - dragStateRef.current.offsetY
+      const next = clampPosition(rawX, rawY)
+
+      setBackButtonPos((current) => {
+        if (Math.abs(next.x - current.x) > 2 || Math.abs(next.y - current.y) > 2) {
+          dragStateRef.current.moved = true
+        }
+        return next
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      if (dragStateRef.current.moved) {
+        dragStateRef.current.suppressClick = true
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging])
+
+  const handleBackButtonClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (dragStateRef.current.suppressClick) {
+      dragStateRef.current.suppressClick = false
+      event.preventDefault()
+      return
+    }
+
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+      return
+    }
+
+    router.push('/')
+  }
+
+  useEffect(() => {
+    const handleResize = () => {
+      setBackButtonPos((current) => clampPosition(current.x, current.y))
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   if (!content) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
@@ -79,27 +174,42 @@ ${resolvedJs}
   return (
     <>
       <Head>
-        <title>{content.title} - CampusKit</title>
-        <meta name="description" content={`${content.subject} - ${content.title}`} />
+        <title>{content.title} | Campus Kit</title>
+        <meta name="title" content={`${content.title} | Campus Kit`} />
+        <meta name="description" content={`View ${content.title} in ${content.subject} on Campus Kit.`} />
+        <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+        <meta name="keywords" content={`${content.subject}, ${content.title}, Campus Kit, student projects, web project`} />
+        <link rel="canonical" href={canonicalUrl} />
+
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Campus Kit" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={`${content.title} | Campus Kit`} />
+        <meta property="og:description" content={`View ${content.title} in ${content.subject} on Campus Kit.`} />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={canonicalUrl} />
+        <meta name="twitter:title" content={`${content.title} | Campus Kit`} />
+        <meta name="twitter:description" content={`View ${content.title} in ${content.subject} on Campus Kit.`} />
       </Head>
 
-      {/* Floating back button */}
-      <Link
-        href="/"
-        className="fixed top-4 left-4 z-50 flex items-center gap-2 px-3 py-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-lg text-white text-sm hover:bg-black/70 transition-colors"
+      <div
+        className="fixed z-50 hidden sm:block"
+        style={{ left: backButtonPos.x, top: backButtonPos.y, touchAction: 'none' }}
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back
-      </Link>
-
-      {/* Content info badge */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-lg">
-        <div>
-          <p className="text-white text-sm font-medium">{content.title}</p>
-          <p className="text-gray-400 text-xs">{content.subject} • {content.views} views</p>
-        </div>
+        <button
+          type="button"
+          onMouseDown={handleBackMouseDown}
+          onClick={handleBackButtonClick}
+          className="flex items-center gap-2 px-3 py-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-lg text-white text-sm hover:bg-black/70 transition-colors cursor-move"
+          aria-label="Go back"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back
+        </button>
       </div>
 
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }}>
@@ -124,9 +234,10 @@ ${resolvedJs}
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   const subjectSlug = params?.subjectSlug as string
   const titleSlug = params?.titleSlug as string
+  const canonicalUrl = `https://campuskit.vercel.app/${subjectSlug}/${titleSlug}`
 
   if (!subjectSlug || !titleSlug) {
-    return { props: { content: null, assets: [] } }
+    return { props: { content: null, assets: [], canonicalUrl: 'https://campuskit.vercel.app/' } }
   }
 
   try {
@@ -151,7 +262,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
     })
 
     if (!content) {
-      return { props: { content: null, assets: [] } }
+      return { props: { content: null, assets: [], canonicalUrl } }
     }
 
     // Fetch user's assets
@@ -180,10 +291,11 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
           userId: content.userId,
         },
         assets,
+        canonicalUrl,
       },
     }
   } catch (error) {
     console.error('Error fetching content:', error)
-    return { props: { content: null, assets: [] } }
+    return { props: { content: null, assets: [], canonicalUrl } }
   }
 }

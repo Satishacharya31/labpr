@@ -5,10 +5,13 @@ import prisma from '@/lib/prisma';
 import { uploadBase64, deleteByUrl, getMimeType, isImage } from '@/lib/azure-storage';
 
 // Disable default body parser for file uploads
+const MAX_ASSET_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_DOCUMENT_SIZE_BYTES = 50 * 1024 * 1024;
+
 export const config = {
     api: {
         bodyParser: {
-            sizeLimit: '10mb',
+            sizeLimit: '75mb',
         },
     },
 };
@@ -62,6 +65,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return res.status(400).json({ error: 'File and fileName are required' });
             }
 
+            const bufferSize = Buffer.from(file.replace(/^data:[^;]+;base64,/, ''), 'base64').length;
+            const maxAllowedSize = folder === 'content-pdfs' ? MAX_DOCUMENT_SIZE_BYTES : MAX_ASSET_SIZE_BYTES;
+
+            if (bufferSize > maxAllowedSize) {
+                const maxLabel = folder === 'content-pdfs' ? '50MB' : '10MB';
+                return res.status(413).json({ error: `File too large. Maximum size is ${maxLabel}.` });
+            }
+
             // Upload to Azure Blob Storage
             const mimeType = getMimeType(fileName);
             const result = await uploadBase64(file, fileName, {
@@ -89,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     slug,
                     url: result.url,
                     mimeType,
-                    size: Buffer.from(file.replace(/^data:[^;]+;base64,/, ''), 'base64').length,
+                    size: bufferSize,
                     width,
                     height,
                     folder,

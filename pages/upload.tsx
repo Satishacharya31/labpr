@@ -217,8 +217,11 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File too large. Maximum size is 10MB.');
+    const maxSizeBytes = isMainPdf ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    const maxSizeLabel = isMainPdf ? '50MB' : '10MB';
+
+    if (file.size > maxSizeBytes) {
+      alert(`File too large. Maximum size is ${maxSizeLabel}.`);
       return;
     }
 
@@ -326,9 +329,9 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
   return (
     <>
       <Head>
-        <title>{id ? 'Edit Project' : 'Online HTML Compiler & Project Upload'} - CampusKit</title>
+        <title>{id ? 'Edit Project' : 'Online HTML Compiler & Project Upload'} - Campus Kit</title>
         <meta name="description" content="Upload your academic projects or use our online HTML, CSS, and JavaScript compiler. Share your work with the student community." />
-        <meta name="keywords" content="html compiler, online code editor, upload project, academic resources, web development, campuskit" />
+        <meta name="keywords" content="html compiler, online code editor, upload project, academic resources, web development, campus kit" />
       </Head>
 
       <div className="h-screen flex flex-col bg-[#1e1e1e] text-white overflow-hidden font-sans">
@@ -568,7 +571,7 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
                         </svg>
                       </div>
                       <h3 className="text-lg font-medium text-white mb-2">Upload PDF Document</h3>
-                      <p className="text-sm text-gray-500 mb-6">Drag and drop your PDF here, or click to browse</p>
+                      <p className="text-sm text-gray-500 mb-6">Drag and drop your PDF here, or click to browse (max 50MB)</p>
                       <input
                         ref={pdfInputRef}
                         type="file"

@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
     return (
         <>
             <Head>
-                <title>User Management - CampusKit</title>
+                <title>User Management - Campus Kit</title>
             </Head>
 
             <div className="min-h-screen bg-[#0a0a0f] text-white">

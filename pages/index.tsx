@@ -29,6 +29,18 @@ export default function Home() {
 
   useEffect(() => {
     fetchCategories()
+
+    const refreshCategories = () => {
+      fetchCategories()
+    }
+
+    window.addEventListener('focus', refreshCategories)
+    const interval = window.setInterval(refreshCategories, 60000)
+
+    return () => {
+      window.removeEventListener('focus', refreshCategories)
+      window.clearInterval(interval)
+    }
   }, [])
 
   useEffect(() => {
@@ -41,9 +53,9 @@ export default function Home() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/categories')
+      const res = await fetch('/api/categories', { cache: 'no-store' })
       const data = await res.json()
-      setCategories(data)
+      setCategories(Array.isArray(data) ? data : data.categories || [])
     } catch (error) {
       console.error('Failed to fetch categories:', error)
     }
@@ -73,27 +85,45 @@ export default function Home() {
     }
   }
 
-  const subjects: string[] = ['All', ...categories.map(c => c.name)]
+  const subjects: string[] = [
+    'All',
+    ...Array.from(
+      new Set([
+        ...categories.map((category) => category.name),
+        ...contents.map((content) => content.subject).filter(Boolean),
+      ])
+    ),
+  ]
+
+  useEffect(() => {
+    if (selectedSubject !== 'All' && !subjects.includes(selectedSubject)) {
+      setSelectedSubject('All')
+    }
+  }, [selectedSubject, subjects])
 
   return (
     <>
       <Head>
-        <title>CampusKit - Academic Material Search & Web Development Tools</title>
+        <title>Campus Kit - Academic Material Search & Web Development Tools</title>
+        <meta name="title" content="Campus Kit - Academic Material Search & Web Development Tools" />
         <meta name="description" content="Search academic materials, lab practicals, exam papers, and projects. Use our online HTML compiler and upload your own content for free." />
         <meta name="google-site-verification" content="GPcAMvoJqIiDxD5OD-H1As13QpgXIFrcuy0sChrji6Y" />
-        <meta name="keywords" content="academic material, lab practicals, exam papers, html compiler, web development, student projects, campuskit" />
+        <meta name="keywords" content="academic material, lab practicals, exam papers, html compiler, web development, student projects, campus kit" />
+        <link rel="canonical" href="https://campuskit.vercel.app/" />
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Campus Kit" />
+        <meta property="og:locale" content="en_US" />
         <meta property="og:url" content="https://campuskit.vercel.app/" />
-        <meta property="og:title" content="CampusKit - Academic Material Search & Web Development Tools" />
+        <meta property="og:title" content="Campus Kit - Academic Material Search & Web Development Tools" />
         <meta property="og:description" content="Search academic materials, lab practicals, exam papers, and projects. Use our online HTML compiler and upload your own content for free." />
         <meta property="og:image" content="https://campuskit.vercel.app/og-image.jpg" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://campuskit.vercel.app/" />
-        <meta property="twitter:title" content="CampusKit - Academic Material Search & Web Development Tools" />
+        <meta property="twitter:title" content="Campus Kit - Academic Material Search & Web Development Tools" />
         <meta property="twitter:description" content="Search academic materials, lab practicals, exam papers, and projects. Use our online HTML compiler and upload your own content for free." />
         <meta property="twitter:image" content="https://campuskit.vercel.app/og-image.jpg" />
       </Head>
@@ -134,7 +164,7 @@ export default function Home() {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide max-w-full md:max-w-md">
+          <div className="flex flex-wrap gap-3 mb-8 overflow-x-auto pb-2">
             {subjects.map((subject) => (
               <button
                 key={subject}

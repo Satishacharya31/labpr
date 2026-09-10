@@ -300,9 +300,8 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
   };
 
   // ─── File Upload ──────────────────────────────────────────────────────────
-  // Everything goes through our own server (POST /api/assets, multipart/form-data).
-  // The API uses formidable + bodyParser:false so files stream straight to Azure
-  // without hitting any body-size limit. No SAS, no direct-to-Azure, no CORS.
+  // Request a short-lived Azure SAS URL from our server, upload bytes directly to
+  // Azure, then send only metadata through the serverless API.
   // ─────────────────────────────────────────────────────────────────────────
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isMainPdf = false) => {
     const file = e.target.files?.[0];
@@ -328,28 +327,54 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
     else setUploadingAsset(true);
 
     try {
-      const form = new FormData();
-      form.append('file',     file);
-      form.append('fileName', file.name);
-      form.append('folder',   isMainPdf ? 'content-pdfs' : 'assets');
-      form.append('size',     String(file.size));
-      form.append('mimeType', file.type || 'application/octet-stream');
-
-      const res = await fetch('/api/assets', {
+      const uploadUrlResponse = await fetch('/api/assets/upload-url', {
         method: 'POST',
-        // Do NOT set Content-Type header — browser sets it automatically
-        // with the correct multipart boundary when body is FormData.
-        body: form,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type || 'application/octet-stream',
+          folder: isMainPdf ? 'content-pdfs' : 'assets',
+        }),
       });
 
       let data: Record<string, unknown> = {};
-      try { data = await res.json(); } catch { /* ignore */ }
+      try { data = await uploadUrlResponse.json(); } catch { /* ignore */ }
 
-      if (!res.ok) {
-        throw new Error((data.error as string) || `Upload failed (${res.status})`);
+      if (!uploadUrlResponse.ok) {
+        throw new Error((data.error as string) || `Upload failed (${uploadUrlResponse.status})`);
       }
 
-      const uploadedAsset = (data.asset ?? data) as {
+      const azureUploadResponse = await fetch(data.uploadUrl as string, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+          'x-ms-blob-type': 'BlockBlob',
+        },
+        body: file,
+      });
+
+      if (!azureUploadResponse.ok) {
+        throw new Error(`Azure upload failed (${azureUploadResponse.status})`);
+      }
+
+      const res = await fetch('/api/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: data.fileName,
+          url: data.url,
+          folder: data.folder,
+          size: data.fileSize,
+          mimeType: data.mimeType,
+        }),
+      });
+
+      let assetData: Record<string, unknown> = {};
+      try { assetData = await res.json(); } catch { /* ignore */ }
+      if (!res.ok) throw new Error((assetData.error as string) || `Metadata registration failed (${res.status})`);
+
+      const uploadedAsset = (assetData.asset ?? assetData) as {
         url: string; name: string; size: number; mimeType: string;
       };
 

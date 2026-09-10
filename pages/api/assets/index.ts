@@ -23,7 +23,7 @@ export const config = {
     },
 };
 
-const MAX_ASSET_SIZE    = 10 * 1024 * 1024;  // 10 MB  — images / generic assets
+const MAX_ASSET_SIZE    = 50 * 1024 * 1024;  // 50 MB  — images / videos / generic assets
 const MAX_DOCUMENT_SIZE = 50 * 1024 * 1024;  // 50 MB  — PDFs, DOCX, PPTX …
 
 const DOCUMENT_FOLDERS = new Set(['content-pdfs', 'documents']);
@@ -113,7 +113,7 @@ async function handleMultipartUpload(
                 if (raw.size > maxAllowed) {
                     await fs.promises.unlink(raw.filepath).catch(() => {});
                     return reject(Object.assign(
-                        new Error(`File too large. Max ${isDoc ? '50 MB' : '10 MB'} for ${isDoc ? 'documents' : 'assets'}.`),
+                        new Error(`File too large. Max 50 MB for ${isDoc ? 'documents' : 'assets'}.`),
                         { status: 413 },
                     ));
                 }
@@ -129,7 +129,7 @@ async function handleMultipartUpload(
 
                 // Validate MIME
                 const baseMime = mimeType.split(';')[0].trim();
-                if (!ALLOWED_MIME[baseMime] && !baseMime.startsWith('image/') && !baseMime.startsWith('text/')) {
+                if (!ALLOWED_MIME[baseMime] && !baseMime.startsWith('image/') && !baseMime.startsWith('text/') && !baseMime.startsWith('video/')) {
                     await fs.promises.unlink(raw.filepath).catch(() => {});
                     return reject(Object.assign(new Error(`File type "${baseMime}" is not allowed.`), { status: 415 }));
                 }

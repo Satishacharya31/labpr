@@ -316,8 +316,8 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
     }
 
     // Validate size client-side (server also enforces this)
-    const MAX_SIZE = isMainPdf ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
-    const MAX_LABEL = isMainPdf ? '50 MB' : '10 MB';
+    const MAX_SIZE = 50 * 1024 * 1024;
+    const MAX_LABEL = '50 MB';
     if (file.size > MAX_SIZE) {
       alert(`File too large. Maximum allowed size is ${MAX_LABEL}.`);
       e.target.value = '';
@@ -407,12 +407,14 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
     if (content.type !== 'CODE') return;
 
     const isImage = asset.mimeType.startsWith('image/');
+    const isVideo = asset.mimeType.startsWith('video/');
     // Use relative path
     const relativePath = `assets/${asset.name}`;
 
     let insertText = '';
     if (activeTab === 'html') {
       if (isImage) insertText = `<img src="${relativePath}" alt="${asset.name}" />`;
+      else if (isVideo) insertText = `<video src="${relativePath}" controls></video>`;
       else insertText = `<a href="${relativePath}" target="_blank">${asset.name}</a>`;
     } else if (activeTab === 'css') {
       insertText = `url("${relativePath}")`;
@@ -564,12 +566,14 @@ ${resolvedHtml.replace(/<!DOCTYPE html>|<html[^>]*>|<\/html>|<head>[\s\S]*?<\/he
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       <span className="text-xs italic">{uploadingAsset ? 'Uploading...' : 'Add Asset...'}</span>
                     </div>
-                    <input ref={fileInputRef} type="file" accept="image/*,.pdf,.svg" onChange={(e) => handleFileUpload(e, false)} className="hidden" />
+                    <input ref={fileInputRef} type="file" accept="image/*,video/*,.pdf,.svg" onChange={(e) => handleFileUpload(e, false)} className="hidden" />
 
                     {assets.map(asset => (
                       <div key={asset.id} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', asset.url); }} onClick={() => insertAssetToCode(asset)} className="group flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded hover:bg-[#2a2d2e] text-gray-400 hover:text-white" title={asset.name}>
                         {asset.mimeType.includes('image') ? (
                           <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        ) : asset.mimeType.includes('video') ? (
+                          <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z" /></svg>
                         ) : asset.mimeType.includes('pdf') ? (
                           <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                         ) : (
